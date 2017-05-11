@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Webcam based gaze tracker</title>  
+  <title>Webcam based gaze tracker</title>
   <meta name="description" content="Web browser based gaze tracking"/>
   <meta name="keywords" content="gaze, eye tracking, webcam, HCI, crowdsourcing, computer vision" />
   <meta name="author" content="Pingmei Xu"/>
@@ -13,7 +13,7 @@
 
 <body>
 
-<table id="content" style="display: none;"> 
+<table id="content" style="display: none;">
   <tr>
     <td>
     <!-- HIT summary -->
@@ -25,12 +25,12 @@
     <!-- icons for instruction -->
     <div id="instrimgdiv" style="display: none;"></div>
     </td>
-  </tr> 
+  </tr>
   <tr>
-    <td>  
+    <td>
       <button id="fullscreenButton" onclick="enterFullScreen();" style="display: none;">Enter Gaze Game</button>
     </td>
-  </tr> 
+  </tr>
   <tr  style="height:0px;">
     <td>
     <p id="warningP" style="display: none;">To get a higher score, you need to</p>
@@ -93,7 +93,7 @@
 <!-- copy address to clipboard -->
 <script src="./js/lib/jquery.zclip.js"></script>
 <!-- sound effect -->
-<script src="./js/lib/howler.min.js"></script>  
+<script src="./js/lib/howler.min.js"></script>
 <!-- svg -->
 <script src="./js/lib/snap.svg-min.js"></script>
 
@@ -157,6 +157,7 @@ WebFontConfig.ready(function(){
 
 
 <script type="text/javascript">
+var DISABLE_TEST = true;
 // get user media
 function hasGetUserMedia() {
   return !!(navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia);
@@ -209,7 +210,7 @@ function getMedia(){
 $(document).ready(function() {
   $('#instrmsgP').css({'max-width':"80%", "top":"51%","left":"10%","right":"10%"});
   $('#instrmsgP').show();
-  if(bowser.name != 'Chrome'){ // test web browser: terminate if not google chrome  
+  if(bowser.name != 'Chrome'){ // test web browser: terminate if not google chrome
     alert(instrMsg.webbrowser);
     // instruction: copy address
     $("#instrmsgP").html(instrMsg.copylink);
@@ -271,7 +272,7 @@ function setUpCanvas(){
   fsoverlayCanvas.width = sW;
   fsoverlayCanvas.height = sH;
 
-  
+
   // instruction: allow access to fullscreen
     $('#instrmsgP').html('');
   $('#instrmsgP').css({'width':"80%", "top":"51%","left":"10%","right":"10%"});
@@ -282,7 +283,7 @@ function setUpCanvas(){
   // button: quit full screen mode
   $('#quitFullScreenButton').css( "backgroundColor", closeTabBttnColor);
   $('#quitFullScreenButton').prop('disabled', false);
-  
+
   $('#content').show();
   $('#instrimgdiv').show();
   $('#hitsummary').show();
@@ -303,7 +304,7 @@ function enterFullScreen(){
   $('#fullscreen').show();
 
   $('#content').hide();
-  fsoverlayCtx.clearRect(0, 0, sW, sH); 
+  fsoverlayCtx.clearRect(0, 0, sW, sH);
   $('#fsoverlay').show();
 
   // place canvases to correct position
@@ -323,8 +324,8 @@ function enterFullScreen(){
   // toggle full screen
   $('#fscontent').css({'width':sW, 'height':sH});
   toggleFullScreenOnEle("content");
-  $(document).bind('keydown', function fn(event) 
-  { 
+  $(document).bind('keydown', function fn(event)
+  {
     if(event.keyCode == 81){ // 'q'
       $(document).unbind(); // unbind key press event
       KEY_DOWN = true;
@@ -332,7 +333,7 @@ function enterFullScreen(){
       restartTask(instrMsg.restartwork);
     }
   });
-  
+
   setTimeout(function() {checkFullscreenOn();}, 3000); // constantly check fullscreen
   startTracking(); // start facial landmark tracking
 }
@@ -343,11 +344,11 @@ function restartTask(msg){
     molestarttime = null;
     svgpaper.remove();
     $('#fullscreen').show();
-    $('#fsoverlay').show(); 
+    $('#fsoverlay').show();
     MOLETEST = false;
     DISPLAYON = false;
   }
-  
+
   RESTART = true; // restart experiment
   // terminate loops
   if (ldmkTrackRequest) cancelRequestAnimFrame(ldmkTrackRequest);
@@ -358,7 +359,7 @@ function restartTask(msg){
   if (checkFullscreenOnRequest) cancelRequestAnimFrame(checkFullscreenOnRequest);
   ctrackr.stop(); // face tracker
   if(recorder != null) recorder.stop(); // recorder
-  if(rawcarrier != null) rawcarrier.terminate(); // stop sending eye patch data 
+  if(rawcarrier != null) rawcarrier.terminate(); // stop sending eye patch data
 
   recorder = null;
   KEY_DOWN = false;
@@ -450,8 +451,8 @@ function facialLdmkTrackingDisplay(){
   msgoverlayCtx.clearRect(0, 0, drawW, drawH);
   msgoverlayCtx.fillStyle = statusMsgBarColor;
   msgoverlayCtx.fillRect(0, 0, barw, barh);
-  
-  var positions = ctrackr.getCurrentPosition(); 
+
+  var positions = ctrackr.getCurrentPosition();
   var msg = checkLdmkValidity(positions);
   var validldmk = false;
   if (msg == ''){
@@ -494,12 +495,12 @@ function startTask(){
   RESTART = false;
   $('#tipsdiv').hide();
   var positions = ctrackr.getCurrentPosition();
-  if (checkLdmkValidity(positions) != ''){return;} 
+  if (checkLdmkValidity(positions) != ''){return;}
   // hide cursor
   $('#fullscreen').css('cursor','none');
   $('#fsoverlay').css('cursor','none');
   $('#instrmsgP').css('cursor','none');
-  fsoverlayCtx.clearRect(0, 0, sW, sH); 
+  fsoverlayCtx.clearRect(0, 0, sW, sH);
   $('#fsoverlay').hide();
 
   prev_positions = null; // detect rapid change in facial landmark location
@@ -511,7 +512,7 @@ function startTask(){
   eh = Math.max(eh, ew*eyepatchratio);
 
   optionColorhist.pw = ew * colorhistmargin;
-  optionColorhist.ph = eh * colorhistmargin; 
+  optionColorhist.ph = eh * colorhistmargin;
   colorhist = new normalizedHist.hist(optionColorhist);
   patchsize[0] = colorhist.patchwidth();
   patchsize[1] = colorhist.patchheight();
@@ -519,18 +520,18 @@ function startTask(){
   // initialize queue for training, testing, raw data collection
   trainQueue = [], testQueue = [], blankQueue = [], dataQueue = [], detectQueue = [], displayQueue = [], timeQueue = [];
   memActionQueue = []; pigQueue = [];
-  
+
   // bilateral setting
     bfilterQ = new Array(bfilterLen);
   bfilterCnt = 0;
-  
+
   // optical flow setting
   opticlflw_para.pw = patchsize[0];
   opticlflw_para.ph = patchsize[1];
   opticlflw_para.w = trckW;
   opticlflw_para.h = trckH;
   opticlflw = new OpticalFlow(opticlflw_idx, opticlflw_mp_idx, positions, opticlflw_para);
-  
+
   // online prediction
   model_online = null;
 
@@ -582,7 +583,7 @@ function ldmktracking(){
     if (lastFrameTimeTrck == null) { lastFrameTime = time;}
     if (time - lastFrameTimeTrck <= trckInterval) return; // control frame rate: 25 ms per frame
     lastFrameTimeTrck = time;
-  
+
   trackCanvasCtx.drawImage(streamVideo, 0, 0, trckW, trckH) // rescale the image
   ctrackr.trackFrame(trackCanvas); // tracking
 }
@@ -605,14 +606,14 @@ function drawstabilization(){
       for(var e = 0; e < 2; e++){
         for(var i = 0; i < opticlflw_mp_idx[0].length; i++){
           curr_pos[e][0] += positions[opticlflw_mp_idx[e][i]][0] * scaleW;
-          curr_pos[e][1] += positions[opticlflw_mp_idx[e][i]][1] * scaleH;  
+          curr_pos[e][1] += positions[opticlflw_mp_idx[e][i]][1] * scaleH;
         }
         curr_pos[e][0] /= opticlflw_mp_idx[0].length;
         curr_pos[e][1] /= opticlflw_mp_idx[0].length;
       }
     // optical flow
     var imgdata = new Array(2);
-    for(var e = 0; e < 2; e++){     
+    for(var e = 0; e < 2; e++){
       // original ldmk
       imgdata[e] = hdCanvasCtx.getImageData(curr_pos[e][0] - (patchsize[0]-1)/2, curr_pos[e][1] - (patchsize[1]-1)/2, patchsize[0], patchsize[1]);
     }
@@ -623,9 +624,9 @@ function drawstabilization(){
     ofCtx.fillRect((ofCanvas.width-w)/2,0,w,h);
     ofCtx.strokeStyle = "#FFFF00";
     ofCtx.strokeRect((ofCanvas.width-w)/2,0,w,h);
-    
+
     for(var e = 0; e < 2; e++){
-      ofCtx.putImageData(imgdata[e], (w/2-patchsize[0])/2+(ofCanvas.width)/2*e+(ofCanvas.width-w)/2*(1-e), (h-patchsize[1]-4)/2); 
+      ofCtx.putImageData(imgdata[e], (w/2-patchsize[0])/2+(ofCanvas.width)/2*e+(ofCanvas.width-w)/2*(1-e), (h-patchsize[1]-4)/2);
     }
 
     // bilateral filtering
@@ -647,7 +648,7 @@ function drawstabilization(){
     }
     // draw eye image data
     for(var e = 0; e < 2; e++){
-      ofCtx.putImageData(imgdata[e], (w/2-patchsize[0])/2+(ofCanvas.width)/2*e+(ofCanvas.width-w)/2*(1-e), (h+patchsize[1]+4)/2); 
+      ofCtx.putImageData(imgdata[e], (w/2-patchsize[0])/2+(ofCanvas.width)/2*e+(ofCanvas.width-w)/2*(1-e), (h+patchsize[1]+4)/2);
     }
 
     // test fixed position
@@ -689,7 +690,7 @@ function drawstabilization(){
       savebfloc[jittercnter*2+1] = bfpos[0][1];
 
       jittercnter++;
-    }   
+    }
   }
 }
 
@@ -697,7 +698,7 @@ function drawstabilization(){
 function display(sequence){
   if (RESTART){
     DISPLAYON = false;
-    return; 
+    return;
   }
   if (curposdisplay >= sequence.length){ // finish experiment
     curposdisplay++;
@@ -725,7 +726,7 @@ function display(sequence){
       ctx.fillStyle = pointBckColor;
       ctx.fillRect(0,0,sW,sH);
       var iconidx = Math.floor(Math.random()*icons.length); // randomly select a bird
-      // bird 
+      // bird
       ctx.drawImage(iconset[iconidx], px-iconsize/2, py-iconsize/2, iconsize, iconsize);
       iconsound.play();
       // door and dot
@@ -733,7 +734,7 @@ function display(sequence){
       drawDynamicRing(ctx, px, py, pointBckColor, pointBckColor, duration*(1-ratio), iconsize*0.75, 8, step, function(){
         curposdisplay++;
         drawDynamicCirc(sW, sH, ctx, px, py, pointBckColor, iconcolor[iconidx], duration*ratio, 8, 8, step, function(){
-          display(sequence); 
+          display(sequence);
           DISPLAYDOTON = false;
         });
       });
@@ -744,7 +745,7 @@ function display(sequence){
       var idx;
       for(var i = 0; i < numimg; i++){
         if(imgpaths[i] == entry.path){
-          idx = i; 
+          idx = i;
           break;
         }
       }
@@ -758,7 +759,7 @@ function display(sequence){
     case "video":
       ctx.fillStyle = imgBckColor;
       ctx.fillRect(0,0,sW,sH);
-      
+
       var b = entry.index[0], c = entry.index[1];
       playvideos(b, c);
       curposdisplay++;
@@ -797,7 +798,7 @@ function display(sequence){
       break;
     case "abtest":
       curposdisplay++;
-      fsoverlayCtx.clearRect(0, 0, sW, sH); 
+      fsoverlayCtx.clearRect(0, 0, sW, sH);
       $('#fsoverlay').show();
       abtestStartTime = new Date().getTime();
       startabtest();
@@ -841,7 +842,7 @@ function display(sequence){
 
       timeController = drawTimeController(sH - toolbarHeight*0.4, toolbarHeight*0.2 , 500);
       timeController.setTimeout(gameTotalTime);
-        
+
       startwhacamole();
       molestarttime = new Date().getTime();
       setTimeout(checkMoleTimeout, entry.duration, molestarttime);
@@ -872,7 +873,7 @@ function checkabtest(){
     DISPLAYON = false;
   }
   if(ABTEST == false){
-    cancelAnimationFrame(abtestRequest);  
+    cancelAnimationFrame(abtestRequest);
   }
 }
 // angry bird: kill pig test
@@ -931,7 +932,7 @@ function VideoRecorder(mediaStream,width,height) {
             if (time - lastFrameTime <= 25) return; // control frame rate: 25 ms per frame
 
             if (cntFPS <= numFPSframe) {
-              cntFPS++; 
+              cntFPS++;
               avgFPS += 1000/(time - lastFrameTime);
               if (cntFPS == numFPSframe) {
                 avgFPS /= numFPSframe;
@@ -948,10 +949,10 @@ function VideoRecorder(mediaStream,width,height) {
             if (VISUALIZATION == true){ // do not save video if visualizatin is not requested
               ImageData += time + ';' + canvas.toDataURL('image/jpeg', 0.9).substring(23) + ';'; // record frame
             }
-            
+
             // track face and extract features
       hdCanvasCtx.drawImage(streamVideo,0,0,hdW,hdH); // hd image
-      
+
       var positions = ctrackr.getCurrentPosition(); // get landmark location
 
       // check the validity of current landmark positions and temporal chagne
@@ -980,7 +981,7 @@ function VideoRecorder(mediaStream,width,height) {
         var delta = 0;
         for(var i = 0; i < stable_idx.length; i++){
           delta += Math.sqrt(Math.pow(prev_stable_pos[i][0]-positions[stable_idx[i]][0], 2)+Math.pow(prev_stable_pos[i][1]-positions[stable_idx[i]][1], 2));
-        }     
+        }
         if(delta/stable_idx.length > stable_th){
           // console.log(delta/stable_idx.length)
           prev_stable_pos = null;
@@ -1001,7 +1002,7 @@ function VideoRecorder(mediaStream,width,height) {
           for(var e = 0; e < 2; e++){
             for(var i = 0; i < opticlflw_mp_idx[0].length; i++){
               curr_pos[e][0] += positions[opticlflw_mp_idx[e][i]][0] * scaleW;
-              curr_pos[e][1] += positions[opticlflw_mp_idx[e][i]][1] * scaleH;  
+              curr_pos[e][1] += positions[opticlflw_mp_idx[e][i]][1] * scaleH;
             }
             curr_pos[e][0] /= opticlflw_mp_idx[0].length;
             curr_pos[e][1] /= opticlflw_mp_idx[0].length;
@@ -1042,7 +1043,7 @@ function VideoRecorder(mediaStream,width,height) {
       }else{
         switch(entry.tag){
           case "train":
-            trainQueue.push(feature); 
+            trainQueue.push(feature);
             displayQueue.push({'type':entry.tag,'index': trainQueue.length-1});
             break;
           case "test":
@@ -1067,19 +1068,19 @@ function VideoRecorder(mediaStream,width,height) {
             }
 
             if(SHOWONLINE && !ABTEST){
-              fsoverlayCtx.clearRect(0, 0, sW, sH); 
+              fsoverlayCtx.clearRect(0, 0, sW, sH);
               drawCrossHair(fsoverlayCtx, x, y, crosshairRadius, '#0F0', crosshairCircW, crosshairCrsW);
             }
-            
+
             if(ABTEST){ // angry bird test
               // draw cross hair
-              fsoverlayCtx.clearRect(0, 0, sW, sH); 
+              fsoverlayCtx.clearRect(0, 0, sW, sH);
               drawCrossHair(fsoverlayCtx, x, y, crosshairRadius, '#0F0', crosshairCircW, crosshairCrsW);
               var d = Math.max(Math.abs(x-curpigpos[0]), Math.abs(y-curpigpos[1]));
-              if (d < pigsize*0.5){
+              if (d < pigsize*0.5 || DISABLE_TEST){
                 hitcountdown--;
                 // draw cross hair
-                fsoverlayCtx.clearRect(0, 0, sW, sH); 
+                fsoverlayCtx.clearRect(0, 0, sW, sH);
                 drawCrossHair(fsoverlayCtx, x, y, crosshairRadius, '#F00', crosshairCircW, crosshairCrsW);
                 laseracesound.play('laser');
                 var x = curpigpos[0]-bloodRectW/2, y = curpigpos[1]-pigsize/2-15;
@@ -1107,7 +1108,7 @@ function VideoRecorder(mediaStream,width,height) {
                   }else{
                     ABTEST = false;
                     if(!SHOWONLINE){
-                      $('#fsoverlay').hide(); 
+                      $('#fsoverlay').hide();
                     }
                     // bonus points for abtest
                     var mark = basemarkpig;
@@ -1124,7 +1125,7 @@ function VideoRecorder(mediaStream,width,height) {
                       laseracesound.play('winner');
                     },300);
                     setTimeout(function(){
-                      display(expsequence); // start real experiment  
+                      display(expsequence); // start real experiment
                       $('#memmark').hide();
                     }, 800);
                   }
@@ -1141,7 +1142,7 @@ function VideoRecorder(mediaStream,width,height) {
     };
     this.stop = function(callback) {
         if (lastAnimationFrame) { cancelAnimationFrame(lastAnimationFrame);}
-        if (callback){callback();}    
+        if (callback){callback();}
     };
     this.width = width;
     this.height = height;
@@ -1174,10 +1175,10 @@ function stop(){
   estimategaze(); // gaze estimation
 
   if(MemTest){ // add memorability test
-    ctx.clearRect(0, 0, sW, sH); 
+    ctx.clearRect(0, 0, sW, sH);
     ctx.fillStyle = imgBckColor;
     ctx.fillRect(0,0,sW,sH);
-    fsoverlayCtx.clearRect(0, 0, sW, sH); 
+    fsoverlayCtx.clearRect(0, 0, sW, sH);
     $('#fullscreen').show();
     $('#fsoverlay').show();
     $('#fullscreen').css('cursor','default');
@@ -1185,7 +1186,7 @@ function stop(){
     $('#instrmsgP').css('cursor','default');
     $('#instrmsgP').css('color',fsmsgColor);
     memorytestpreview()
-    
+
   }else{
     $('#fullscreen').show();
     $('#fsoverlay').show();
@@ -1193,7 +1194,7 @@ function stop(){
     $('#fsoverlay').css('cursor','default');
     $('#instrmsgP').css('cursor','default');
     resultmsg = 'Thanks for your participation!';
-    ctx.clearRect(0, 0, sW, sH); 
+    ctx.clearRect(0, 0, sW, sH);
     ctx.fillStyle = imgBckColor;
     ctx.fillRect(0,0,sW,sH);
     $('#memmark').hide();
@@ -1241,24 +1242,24 @@ function senddata(){
     resultQueue[i] = data_item;
   }
   saveQueue = []; // data to download
-  saveQueue.push({'patchsize':patchsize, 'margin':margin_raw, 'screenw': sW, 'screenh':sH}); //raw data parameter 
+  saveQueue.push({'patchsize':patchsize, 'margin':margin_raw, 'screenw': sW, 'screenh':sH}); //raw data parameter
   saveQueue.push(expsequence); // experiment configuration
-  saveQueue.push(resultQueue); // time stamp, prediction 
+  saveQueue.push(resultQueue); // time stamp, prediction
   var trainerr = null, testerr = null, looerr_train = null, looerr_test = null;
   if (train_result != null) trainerr = train_result.error;
   if (test_result != null) testerr = test_result.error;
   if (looerr != null){
     looerr_train = JSON.stringify(looerr.train);
-    looerr_test = JSON.stringify(looerr.test);  
-  } 
+    looerr_test = JSON.stringify(looerr.test);
+  }
   saveQueue.push({'trainerr':trainerr, 'testerr':testerr, 'looerr_train':looerr_train, 'looerr_test':looerr_test, 'bonusmoney':bonusmoney});
 
   if (imagehit){
     saveQueue.push(memActionQueue); // memory test action, time stamp
-    saveQueue.push(pigQueue); // abtest data  
+    saveQueue.push(pigQueue); // abtest data
   }
   if (videohit){
-    saveQueue.push(videolist); // videolist 
+    saveQueue.push(videolist); // videolist
   }
 
   quitfullscreen();
@@ -1271,7 +1272,7 @@ function senddata(){
     }else{
       $('#downloadButton').css({'position':'absolute', 'top':window.innerHeight/3, 'left':(window.innerWidth-$('#downloadButton').width())/2});
     }
-    $('#downloadButton').prop('disabled', false); 
+    $('#downloadButton').prop('disabled', false);
     $('#downloadButton').show();
   }
 }
@@ -1279,7 +1280,7 @@ function senddata(){
 // memory test
 function memorytest(){
   MEMTESTPREVIEW = false;
-  
+
   $("#memscore").fadeTo(0, 1);
   $("#bestmemscore").fadeTo(0, 1);
   $("#fullscreen").fadeTo(0, 1);
@@ -1318,7 +1319,7 @@ function memorytest(){
       }
     }
   }
-  
+
   // draw images
   drawGrids(fsoverlayCtx, gridx, gridy, gridloc, gridsize, gridsel, gridselans, gridColor, selgridColor, gridLineWidth, selLineWidth);
   drawGridsImg(ctx, gridloc, gridsize, MEMTESTPREVIEW);
@@ -1339,7 +1340,7 @@ function memorytest(){
     $('#memmark').css({'top':(sH-$('#memmark').height())/2, 'margin-top':0});
     $('#memmark').show();
     setTimeout(function(){
-      submitMemTest(); // go to the final page  
+      submitMemTest(); // go to the final page
     }, 800);
   }, memetesTimeLimit);
 }
@@ -1370,7 +1371,7 @@ function getPosition(event){
        gridsel[idx[0]][idx[1]] = 1;
       // gridsel[idx[0]][idx[1]] = 1 - gridsel[idx[0]][idx[1]]; // flip status
       // update grids
-      fsoverlayCtx.clearRect(0, 0, $('#fsoverlay').width(), $('#fsoverlay').height()); 
+      fsoverlayCtx.clearRect(0, 0, $('#fsoverlay').width(), $('#fsoverlay').height());
       drawGrids(fsoverlayCtx, gridx, gridy, gridloc, gridsize, gridsel, gridselans, gridColor, selgridColor, gridLineWidth, selLineWidth);
       // update game score
       var mark;
@@ -1396,10 +1397,10 @@ function getPosition(event){
         color = "#F52600";
         falsesound.play();
       }
-      
+
       drawCage(ctx, gridloc, idx[0], idx[1], gridsel[idx[0]][idx[1]], gridselans[idx[0]][idx[1]], gridsize);
       var str = mark.toString();
-      if(mark > 0) str = '+' + str; 
+      if(mark > 0) str = '+' + str;
       $('#memmark').css('color', color);
       $('#memmark').html(str);
       $('#memmark').css({'left':(idx[1]+1)*(gridspacing+gridsize[1])+gridx-gridsize[1]/2-$('#memmark').width()/2, 'margin-left':0});
@@ -1413,7 +1414,7 @@ function getPosition(event){
         }
       }
       $('#memscore').html(s+killpigscore);
-      var x = $('#fsoverlay').width() + numgrids[1]*(gridspacing+gridsize[1])+gridx; 
+      var x = $('#fsoverlay').width() + numgrids[1]*(gridspacing+gridsize[1])+gridx;
       displayElm2Center('#memscore', x, $('#fsoverlay').height()/2);
 
       setTimeout(function(){
@@ -1428,7 +1429,7 @@ function startMemTest(){
   $('#startmemtestButton').hide();
   $("#fsoverlay" ).fadeTo( 0.3 , 0.2, function() {
     $("#fsoverlay").fadeTo(0, 1.0);
-    fsoverlayCtx.clearRect(0, 0, $('#fsoverlay').width(), $('#fsoverlay').height()); 
+    fsoverlayCtx.clearRect(0, 0, $('#fsoverlay').width(), $('#fsoverlay').height());
     fsoverlayCanvas.addEventListener("mousedown", getPosition, false); // mouse click event
     memorytest();
   });
@@ -1459,7 +1460,7 @@ function memorytestpreview(){
   $("#startmemtestButton").css({"width":"370px","top":"50%","left":"50%","right":"50%",  "margin-left":"-185px"});
   $("#startmemtestButton").show();
 
-  gridsel = new Array(numgrids[0]); 
+  gridsel = new Array(numgrids[0]);
   for(var i = 0; i < numgrids[0]; i++){
     gridsel[i] = new Array(numgrids[1]);
     for(var j = 0; j < numgrids[1]; j++){
@@ -1467,7 +1468,7 @@ function memorytestpreview(){
     }
   }
   gridloc = getgridloc(gridx, gridy, gridsize, numgrids, gridspacing);
-  
+
   drawGridsImg(fsoverlayCtx, gridloc, gridsize, MEMTESTPREVIEW);
   drawGrids(fsoverlayCtx, gridx, gridy, gridloc, gridsize, gridsel, gridsel, gridColor, selgridColor, gridLineWidth, selLineWidth);
   $('#memscore').html(killpigscore);
@@ -1475,7 +1476,7 @@ function memorytestpreview(){
   $('#bestmemscore').html('BEST SCORE : ' + bestpastscore);
   $('#bestmemscore').css({"width":"145px","font-family":"digital", "color": "#DB9900", "font-size": "20px"});
 
-  var x = $('#fsoverlay').width() + numgrids[1]*(gridspacing+gridsize[1])+gridx; 
+  var x = $('#fsoverlay').width() + numgrids[1]*(gridspacing+gridsize[1])+gridx;
   displayElm2Center('#memscore', x, $('#fsoverlay').height()/2);
   displayElm2Center('#bestmemscore', x, $('#fsoverlay').height()/2+150*2);
 
@@ -1536,14 +1537,14 @@ function submitMemTest(){
     }else{
       bonusmoney = 0;
     }
-    
+
     resultmsg = 'Congratulations! You have beaten ' + memrank + '% players in the world';
     if(bonusmoney > 0){
       resultmsg += ' and get ' + bonusmoney +'&cent bonus for this HIT!';
     }else{
-      resultmsg += "!"; 
-    } 
-    
+      resultmsg += "!";
+    }
+
     // finishMemTest();
     $('#memmark').hide();
     senddata();
@@ -1574,13 +1575,13 @@ function estimategaze(){
   // cross validation LOO test
   looerr = mlmodel.crossvalidation(trainQueue, expsequence, model, kfold);
   // weighted error
-  if (looerr != null){ 
-    var meanerr = 0; 
+  if (looerr != null){
+    var meanerr = 0;
     for(var i = 0; i < looerr.test.length; i++){
       if(i == 0 || i == looerr.test.length-1){
         meanerr += looerr.test[i];
       }else{
-        meanerr += looerr.test[i]*2;  
+        meanerr += looerr.test[i]*2;
       }
     }
     meanerr /= (2*(looerr.test.length-1));
@@ -1599,7 +1600,7 @@ function visReset(){
   $('#replayButton').prop('disabled', true);
   $('#replayButton').css( "backgroundColor", disableBttnColor);
   visualize();
-  
+
 }
 
 // visualize gaze estimation
@@ -1658,7 +1659,7 @@ function visualize(){
                       imgCanvasCtx.drawImage(image, smlx+(smlW-w)/2, smly+(smlH-h)/2, w, h);
               }else{
                 cancelRequestAnimFrame(visualRequest);
-                image = new Image();  
+                image = new Image();
                     image.onload = function() {
                       cursmlImgSrc = image.src;
                         var s = Math.min(smlW/image.width, smlH/image.height);
@@ -1681,9 +1682,9 @@ function visualize(){
           if (predict_val != null){
             var px = predict_val[0]*smlW+smlx, py = predict_val[1]*smlH+smly, pr = smlPntRadius;
             if (entry.tag == 'train'){
-          drawCircle(overlayCtx, px, py, pr, predPntColor, false);  
+          drawCircle(overlayCtx, px, py, pr, predPntColor, false);
         }else{
-          drawCircle(overlayCtx, px, py, pr, predPntColorTest, false);    
+          drawCircle(overlayCtx, px, py, pr, predPntColorTest, false);
         }
           }
           currVisFrameNum++;
@@ -1716,10 +1717,10 @@ function quitfullscreen(){
     toggleFullScreen();
   }
   if (MemTest){
-    $('#instrmsgP').css('color', msgColor); 
+    $('#instrmsgP').css('color', msgColor);
   }
   $('#quitFullScreenButton').hide();
-  
+
 }
 
 </script>

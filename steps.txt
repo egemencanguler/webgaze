@@ -1,0 +1,7 @@
+*Write down the subject’s name
+*Change image batch - write down corresponding batch numbers for each exp(Turkergaze 1, Webgaze 2)
+*Start Turker Gaze
+*Disable Cache
+*check whether pig game enabled or disabled first try with game if doesn’t work try without game
+*Start webgaze
+*disable cache

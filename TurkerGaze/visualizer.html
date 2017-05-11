@@ -201,7 +201,12 @@ function visualizeResults(){
 				imgpaths.push(expsequence[i].path);
 			}
 		}
+
 		numimg = imgpaths.length;
+
+		console.log("Exp Seq Lenghth",expsequence.length);
+		console.log("imgidx",imgidx);
+		console.log("numing",numimg);
 
 		var gazeloc = new Array(numimg);
 		for (var i = 0; i < numimg; i++){
@@ -210,9 +215,11 @@ function visualizeResults(){
 		for (var i = 0; i < resultQueue.length; i++){
 			entry = resultQueue[i];
 			if(imgidx[resultQueue[i].index] != -1){
+				console.log("resuls i",resultQueue[i].index)
 				gazeloc[imgidx[resultQueue[i].index]].push(resultQueue[i].value);
 			}
 		}
+		console.log("GazeLoc",gazeloc);
 		// memory test
 		memActionQueue = saveQueue[4];
 	}
