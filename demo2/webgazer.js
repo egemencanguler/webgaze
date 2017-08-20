@@ -8069,27 +8069,57 @@ var mosseFilterResponses = function() {
 ;
 
 (function(window) {
-    "use strict";
+    'use strict';
     
     window.webgazer = window.webgazer || {};
 
-    //TODO
+    const defaultWindowSize = 8;
+    const equalizeStep = 5;
+    const threshold = 80;
+    const minCorrelation = 0.78;
+    const maxCorrelation = 0.85;
+
     /**
      * Constructor for BlinkDetector
      * @param blinkWindow
      * @constructor
      */
     webgazer.BlinkDetector = function(blinkWindow) {
-        //TODO use DataWindow instead
-        this.blinkData = [];
         //determines number of previous eyeObj to hold onto
-        this.blinkWindow = blinkWindow || 8;
-
-        //cycles through to replace oldest entry
-        this.blinkWindowIndex = 0;
+        this.blinkWindow = blinkWindow || defaultWindowSize;
+        this.blinkData = new webgazer.util.DataWindow(this.blinkWindow);
     };
 
-    //TODO
+    webgazer.BlinkDetector.prototype.extractBlinkData = function(eyesObj) {
+        const eye = eyesObj.right;
+        const grayscaled = webgazer.util.grayscale(eye.patch.data, eye.width, eye.height);
+        const equalized = webgazer.util.equalizeHistogram(grayscaled, equalizeStep, grayscaled);
+        const thresholded = webgazer.util.threshold(equalized, threshold);
+        return {
+            data: thresholded,
+            width: eye.width,
+            height: eye.height,
+        };
+    }
+
+    webgazer.BlinkDetector.prototype.isSameEye = function(oldEye, newEye) {
+        return (oldEye.width === newEye.width) && (oldEye.height === newEye.height);
+    }
+
+    webgazer.BlinkDetector.prototype.isBlink = function(oldEye, newEye) {
+        let correlation = 0;
+        for (let i = 0; i < this.blinkWindow; i++) {
+            const data = this.blinkData.get(i);
+            const nextData = this.blinkData.get(i + 1);
+            if (!this.isSameEye(data, nextData)) {
+                return false;
+            }
+            correlation += webgazer.util.correlation(data.data, nextData.data);
+        }
+        correlation /= this.blinkWindow;
+        return correlation > minCorrelation && correlation < maxCorrelation;
+    }
+
     /**
      *
      * @param eyesObj
@@ -8099,25 +8129,25 @@ var mosseFilterResponses = function() {
         if (!eyesObj) {
             return eyesObj;
         }
-        if (this.blinkData.length < this.blinkWindow) {
-            this.blinkData.push(eyesObj);
-            eyesObj.left.blink = false;
-            eyesObj.right.blink = false;
-            return eyesObj;
-        }
 
-        //replace oldest entry
-        this.blinkData[this.blinkWindowIndex] = eyesObj;
-        this.blinkWindowIndex = (this.blinkWindowIndex + 1) % this.blinkWindow;
-
-        //TODO detect if current eyeObj is different from eyeObj in blinkData;
+        const data = this.extractBlinkData(eyesObj);
+        this.blinkData.push(data);
 
         eyesObj.left.blink = false;
         eyesObj.right.blink = false;
+
+        if (this.blinkData.length < this.blinkWindow) {
+            return eyesObj;
+        }
+
+        if (this.isBlink()) {
+            eyesObj.left.blink = true;
+            eyesObj.right.blink = true;
+        }
+
         return eyesObj;
     };
 
-    //TODO
     /**
      *
      * @param value
@@ -8135,7 +8165,7 @@ var mosseFilterResponses = function() {
 ;
 
 (function(window) {
-    "use strict";
+    'use strict';
 
     window.webgazer = window.webgazer || {};
     webgazer.tracker = webgazer.tracker || {};
@@ -8234,7 +8264,7 @@ var mosseFilterResponses = function() {
         }
 
         if (leftHeight === 0 || rightHeight === 0){
-          console.log("an eye patch had zero height");
+          console.log('an eye patch had zero height');
           return null;
         }
 
@@ -8272,7 +8302,7 @@ var mosseFilterResponses = function() {
 ;
 
 (function(window) {
-    "use strict";
+    'use strict';
 
     window.webgazer = window.webgazer || {};
     webgazer.tracker = webgazer.tracker || {};
@@ -8294,7 +8324,7 @@ var mosseFilterResponses = function() {
      */
     TrackingjsGaze.prototype.getEyePatches = function(imageCanvas, width, height) {
 
-        if (imageCanvas.width == 0) {
+        if (imageCanvas.width === 0) {
             return null;
         }
 
@@ -8309,11 +8339,11 @@ var mosseFilterResponses = function() {
         var offsetY = 0;
 
         //if face has been detected
-        if (face.length>0 && !isNaN(face[0]) && !isNaN(face[1]) && !isNaN(face[2]) && !isNaN(face[3])){
+        if (face.length > 0 && !isNaN(face[0]) && !isNaN(face[1]) && !isNaN(face[2]) && !isNaN(face[3])){
             //working image is restricted on upper half of detected face
             workingImage = imageCanvas.getContext('2d').getImageData(Math.floor(face[0]), Math.floor(face[1]), Math.floor(face[2]), Math.floor(face[3]/2));
             width = Math.floor(face[2]);
-            height = Math.floor(face[3]/2);
+            height = Math.floor(face[3] / 2);
             //offset from detected face
             offsetX = Math.floor(face[0]);
             offsetY = Math.floor(face[1]);  
@@ -8321,7 +8351,7 @@ var mosseFilterResponses = function() {
 
         var eyes = this.detectEyes(workingImage, width, height);
         console.log(eyes);
-        if (eyes == null){
+        if (eyes === null){
             return null;
         }
 
@@ -8329,8 +8359,8 @@ var mosseFilterResponses = function() {
         var leftImageData = imageCanvas.getContext('2d').getImageData(Math.floor(eyes[0][0])+offsetX, Math.floor(eyes[0][1])+offsetY, Math.floor(eyes[0][2]), Math.floor(eyes[0][3]));
         eyeObjs.left = {
             patch: leftImageData,
-            imagex: eyes[0][0]+offsetX,
-            imagey: eyes[0][1]+offsetY,
+            imagex: eyes[0][0] + offsetX,
+            imagey: eyes[0][1] + offsetY,
             width: eyes[0][2],
             height: eyes[0][3]
         };
@@ -8344,7 +8374,7 @@ var mosseFilterResponses = function() {
             height: eyes[1][3]        
         };
       
-        if (leftImageData.width == 0 || rightImageData.width == 0) {
+        if (leftImageData.width === 0 || rightImageData.width === 0) {
             console.log('an eye patch had zero width');
             return null;
         }
@@ -8444,7 +8474,7 @@ var mosseFilterResponses = function() {
 ;
 
 (function(window) {
-    "use strict";
+    'use strict';
 
     window.webgazer = window.webgazer || {};
     webgazer.tracker = webgazer.tracker || {};
@@ -8466,7 +8496,7 @@ var mosseFilterResponses = function() {
      */
     Js_objectdetectGaze.prototype.getEyePatches = function(imageCanvas, width, height) {
 
-        if (imageCanvas.width == 0) {
+        if (imageCanvas.width === 0) {
             return null;
         }
 
@@ -8481,7 +8511,7 @@ var mosseFilterResponses = function() {
         var offsetY = 0;
 
         //if face has been detected
-        if (face.length>0 && !isNaN(face[0]) && !isNaN(face[1]) && !isNaN(face[2]) && !isNaN(face[3])){
+        if (face.length > 0 && !isNaN(face[0]) && !isNaN(face[1]) && !isNaN(face[2]) && !isNaN(face[3])){
             //working image is restricted on upper half of detected face
             workingImage = imageCanvas.getContext('2d').getImageData(Math.floor(face[0]), Math.floor(face[1]), Math.floor(face[2]), Math.floor(face[3]/2));
             width = Math.floor(face[2]);
@@ -8492,7 +8522,7 @@ var mosseFilterResponses = function() {
         }
 
         var eyes = this.detectEyes(workingImage, width, height);
-        if (eyes == null){
+        if (eyes === null){
             return null;
         }
 
@@ -8500,8 +8530,8 @@ var mosseFilterResponses = function() {
         var leftImageData = imageCanvas.getContext('2d').getImageData(Math.floor(eyes[0][0])+offsetX, Math.floor(eyes[0][1])+offsetY, Math.floor(eyes[0][2]), Math.floor(eyes[0][3]));
         eyeObjs.left = {
             patch: leftImageData,
-            imagex: eyes[0][0]+offsetX,
-            imagey: eyes[0][1]+offsetY,
+            imagex: eyes[0][0] + offsetX,
+            imagey: eyes[0][1] + offsetY,
             width: eyes[0][2],
             height: eyes[0][3]
         };
@@ -8515,7 +8545,7 @@ var mosseFilterResponses = function() {
             height: eyes[1][3]        
         };
       
-        if (leftImageData.width == 0 || rightImageData.width == 0) {
+        if (leftImageData.width === 0 || rightImageData.width === 0) {
             console.log('an eye patch had zero width');
             return null;
         }
@@ -8637,7 +8667,7 @@ var mosseFilterResponses = function() {
           }
         }
 
-        var map ={};
+        var map = {};
         for (var k = 0; k < disjointSet.length; k++){
           var rep = disjointSet.find(k);
           if (!map[rep]){
@@ -8674,6 +8704,7 @@ var mosseFilterResponses = function() {
 }(window));
 ;
 
+'use strict';
 (function(window) {
     
     window.webgazer = window.webgazer || {};
@@ -8788,14 +8819,14 @@ var mosseFilterResponses = function() {
 ;
 
 (function() {
-    "use strict";
+    'use strict';
 
     self.webgazer = self.webgazer || {};
     self.webgazer.mat = self.webgazer.mat || {};
 
     /**
      * Transposes an mxn array
-     * @param {Array.<Array.<Number>>} matrix - of "M x N" dimensionality
+     * @param {Array.<Array.<Number>>} matrix - of 'M x N' dimensionality
      * @return {Array.<Array.<Number>>} transposed matrix
      */
     self.webgazer.mat.transpose = function(matrix){
@@ -8868,7 +8899,7 @@ var mosseFilterResponses = function() {
     self.webgazer.mat.mult = function(matrix1, matrix2){
 
         if (matrix2.length != matrix1[0].length){
-            console.log("Matrix inner dimensions must agree.");
+            console.log('Matrix inner dimensions must agree.');
         }
 
         var X = new Array(matrix1.length),
@@ -8963,11 +8994,11 @@ var mosseFilterResponses = function() {
             }
         }
         if (B.length != m){
-            console.log("Matrix row dimensions must agree.");
+            console.log('Matrix row dimensions must agree.');
         }
         for (var j = 0; j < n; j++){
-            if (LU[j][j] == 0){
-                console.log("Matrix is singular.")
+            if (LU[j][j] === 0){
+                console.log('Matrix is singular.')
             }
         }
         var nx = B[0].length;
@@ -9047,11 +9078,11 @@ var mosseFilterResponses = function() {
             Rdiag[k] = -nrm;
         }
         if (B.length != m){
-            console.log("Matrix row dimensions must agree.");
+            console.log('Matrix row dimensions must agree.');
         }
         for (var j = 0; j < n; j++){
-            if (Rdiag[j] == 0)
-                console.log("Matrix is rank deficient");
+            if (Rdiag[j] === 0)
+                console.log('Matrix is rank deficient');
         }
         // Copy right hand side
         var nx = B[0].length;
@@ -9094,11 +9125,12 @@ var mosseFilterResponses = function() {
 }());
 ;
 
+'use strict';
 (function(window) {
 
     window.webgazer = window.webgazer || {};
     webgazer.pupil = webgazer.pupil || {};
-    
+
     /**
      * Returns intensity value at x,y position of a pixels image
      * @param {Array} pixels - array of size width*height
@@ -9110,7 +9142,7 @@ var mosseFilterResponses = function() {
     var getValue = function (pixels, x, y, width){
         return pixels[y * width + x];
     };
-    
+
     /**
      * Computes summation area table/integral image of a pixel matrix
      * @param {Array} pixels value of eye area
@@ -9122,18 +9154,18 @@ var mosseFilterResponses = function() {
         var integralImage = new Array(width);
         var sumx = 0;
         var sumy = 0;
-    
+
         for (var i = 0; i < width; i++){
             integralImage[i] = new Array(height);
             sumx += getValue(pixels, i, 0, width);
             integralImage[i][0] = sumx;
         }
-    
+
         for (var i = 0; i < height; i++){
             sumy += getValue(pixels, 0, i, width);
             integralImage[0][i] = sumy;
         }
-    
+
         for (var x = 1; x < width; x++){
             for (var y = 1; y < height; y++){
                 integralImage[x][y] = getValue(pixels, x, y, width) + integralImage[x - 1][y] + integralImage[x][y - 1] - integralImage[x - 1][y - 1];
@@ -9141,7 +9173,7 @@ var mosseFilterResponses = function() {
         }
         return integralImage;
     };
-    
+
     /**
      * Detects a pupil in a set of pixels
      * @param  {Array} pixels - patch of pixels to look for pupil into
@@ -9160,13 +9192,13 @@ var mosseFilterResponses = function() {
             //think of a sliding rectangular window of width halfWidth*2 that goes through the whole eye pixel matrix and does the following:
             //1) computes the irisArea, which is the total intensity of the iris
             //2) computes the scleraIrisArea, which is multiple rows of pixels including the sclera and iris.
-            //3) computes avg, which is the intensity of the area divided by the number of pixels.               
+            //3) computes avg, which is the intensity of the area divided by the number of pixels.
             //start at the bottom right of the rectangle!not top left
             for (var x = halfWidth; x < width - offset; x++){
                 for (var y = halfWidth; y < height - offset; y++){
                     //evaluate area by the formula found on wikipedia about the summed area table: I(D)+I(A)-I(B)-I(C)
                     var irisArea = summedAreaTable[x + offset][y + offset] + summedAreaTable[x + offset - halfWidth][y + offset - halfWidth] - summedAreaTable[x + offset][y + offset - halfWidth] - summedAreaTable[x + offset - halfWidth][y + offset];
-                    var avgScore = 1.0 * irisArea / ((halfWidth + 1) * (halfWidth + 1)) + 1; 
+                    var avgScore = 1.0 * irisArea / ((halfWidth + 1) * (halfWidth + 1)) + 1;
                     //summation area table again
                     var scleraIrisArea = ((1.0 * summedAreaTable[width - 1 - offset][y + offset] + summedAreaTable[0 + offset][y + offset - halfWidth] - summedAreaTable[0 + offset][y + offset] - summedAreaTable[width - 1 - offset][y + offset - halfWidth]) - irisArea);
                     //minimize avgScore/scleraIrisArea. 150 is too high, might have to change since it's closer to white
@@ -9180,7 +9212,7 @@ var mosseFilterResponses = function() {
         }
         return [bestPoint, bestHalfWidth];
     };
-    
+
     /**
      * Given an object with two eye patches it finds the location of the detected pupils
      * @param  {Object} eyesObj - left and right detected eye patches
@@ -9191,18 +9223,18 @@ var mosseFilterResponses = function() {
             return eyesObj;
         }
         if (!eyesObj.left.blink) {
-            eyesObj.left.pupil = getSinglePupil(Array.prototype.slice.call(webgazer.util.grayscale(eyesObj.left.patch, eyesObj.left.width, eyesObj.left.height)), eyesObj.left.width, eyesObj.left.height);
+            eyesObj.left.pupil = getSinglePupil(Array.prototype.slice.call(webgazer.util.grayscale(eyesObj.left.patch.data, eyesObj.left.width, eyesObj.left.height)), eyesObj.left.width, eyesObj.left.height);
             eyesObj.left.pupil[0][0] -= eyesObj.left.pupil[1];
             eyesObj.left.pupil[0][1] -= eyesObj.left.pupil[1];
         }
         if (!eyesObj.right.blink) {
-            eyesObj.right.pupil = getSinglePupil(Array.prototype.slice.call(webgazer.util.grayscale(eyesObj.right.patch, eyesObj.right.width, eyesObj.right.height)), eyesObj.right.width, eyesObj.right.height);
+            eyesObj.right.pupil = getSinglePupil(Array.prototype.slice.call(webgazer.util.grayscale(eyesObj.right.patch.data, eyesObj.right.width, eyesObj.right.height)), eyesObj.right.width, eyesObj.right.height);
             eyesObj.right.pupil[0][0] -= eyesObj.right.pupil[1];
             eyesObj.right.pupil[0][1] -= eyesObj.right.pupil[1];
         }
         return eyesObj;
     }
-        
+
 }(window));
 ;
 
@@ -9377,7 +9409,7 @@ var mosseFilterResponses = function() {
             },
             
             polynomial: function(data, order) {
-                if(typeof order == 'undefined'){
+                if(typeof order === 'undefined'){
                     order = 2;
                 }
                  var lhs = [], rhs = [], results = [], a = 0, b = 0, i = 0, k = order + 1;
@@ -9416,7 +9448,7 @@ var mosseFilterResponses = function() {
 
                     for(var i = equation.length-1; i >= 0; i--){
                       if(i > 1) string += Math.round(equation[i] * Math.pow(10, i)) / Math.pow(10, i)  + 'x^' + i + ' + ';
-                      else if (i == 1) string += Math.round(equation[i]*100) / 100 + 'x' + ' + ';
+                      else if (i === 1) string += Math.round(equation[i]*100) / 100 + 'x' + ' + ';
                       else string += Math.round(equation[i]*100) / 100;
                     }
 
@@ -9442,7 +9474,7 @@ var mosseFilterResponses = function() {
 
     var regression = (function(method, data, order) {
 
-           if (typeof method == 'string') {
+           if (typeof method === 'string') {
                return methods[method](data, order);
            }
         });
@@ -9456,6 +9488,7 @@ var mosseFilterResponses = function() {
 }());
 ;
 
+'use strict';
 (function(window) {
 
     window.webgazer = window.webgazer || {};
@@ -9496,11 +9529,11 @@ var mosseFilterResponses = function() {
                 m_Coefficients[i] = bb[i][0];
             }
             try{
-                var n = (m_Coefficients.length != 0 ? m_Coefficients.length/m_Coefficients.length: 0);
-                if (m_Coefficients.length*n != m_Coefficients.length){
-                    console.log("Array length must be a multiple of m")
+                var n = (m_Coefficients.length !== 0 ? m_Coefficients.length/m_Coefficients.length: 0);
+                if (m_Coefficients.length*n !== m_Coefficients.length){
+                    console.log('Array length must be a multiple of m')
                 }
-                solution = (ss.length == ss[0].length ? (numeric.LUsolve(numeric.LU(ss,true),bb)) : (webgazer.mat.QRDecomposition(ss,bb)));
+                solution = (ss.length === ss[0].length ? (numeric.LUsolve(numeric.LU(ss,true),bb)) : (webgazer.mat.QRDecomposition(ss,bb)));
 
                 for (var i = 0; i < nc; i++){
                     m_Coefficients[i] = solution[i];
@@ -9620,7 +9653,7 @@ var mosseFilterResponses = function() {
      * @returns {Object}
      */
     webgazer.reg.RidgeReg.prototype.predict = function(eyesObj) {
-        if (!eyesObj || this.eyeFeaturesClicks.length == 0) {
+        if (!eyesObj || this.eyeFeaturesClicks.length === 0) {
             return null;
         }
         var acceptTime = performance.now() - this.trailTime;
@@ -9692,6 +9725,7 @@ var mosseFilterResponses = function() {
 }(window));
 ;
 
+'use strict';
 (function(window) {
 
     window.webgazer = window.webgazer || {};
@@ -9732,11 +9766,11 @@ var mosseFilterResponses = function() {
                 m_Coefficients[i] = bb[i][0];
             }
             try{
-                var n = (m_Coefficients.length != 0 ? m_Coefficients.length/m_Coefficients.length: 0);
-                if (m_Coefficients.length*n != m_Coefficients.length){
-                    console.log("Array length must be a multiple of m")
+                var n = (m_Coefficients.length !== 0 ? m_Coefficients.length/m_Coefficients.length: 0);
+                if (m_Coefficients.length*n !== m_Coefficients.length){
+                    console.log('Array length must be a multiple of m')
                 }
-                solution = (ss.length == ss[0].length ? (numeric.LUsolve(numeric.LU(ss,true),bb)) : (webgazer.mat.QRDecomposition(ss,bb)));
+                solution = (ss.length === ss[0].length ? (numeric.LUsolve(numeric.LU(ss,true),bb)) : (webgazer.mat.QRDecomposition(ss,bb)));
 
                 for (var i = 0; i < nc; i++){
                     m_Coefficients[i] = solution[i];
@@ -9855,7 +9889,7 @@ var mosseFilterResponses = function() {
      * @returns {Object}
      */
     webgazer.reg.RidgeWeightedReg.prototype.predict = function(eyesObj) {
-        if (!eyesObj || this.eyeFeaturesClicks.length == 0) {
+        if (!eyesObj || this.eyeFeaturesClicks.length === 0) {
             return null;
         }
         var acceptTime = performance.now() - this.trailTime;
@@ -9880,7 +9914,7 @@ var mosseFilterResponses = function() {
             var trueIndex = this.eyeFeaturesClicks.getTrueIndex(i);
             for (var j = 0; j < this.eyeFeaturesClicks.data[trueIndex].length; j++) {
                 var val = this.eyeFeaturesClicks.data[trueIndex][j] * weight;
-                if (weightedEyeFeats[trueIndex] != undefined){
+                if (weightedEyeFeats[trueIndex] !== undefined){
                     weightedEyeFeats[trueIndex].push(val);
                 } else {
                     weightedEyeFeats[trueIndex] = [val];
@@ -9951,6 +9985,7 @@ var mosseFilterResponses = function() {
 }(window));
 ;
 
+'use strict';
 (function(window) {
 
     window.webgazer = window.webgazer || {};
@@ -10037,7 +10072,7 @@ var mosseFilterResponses = function() {
      * @returns {Object}
      */
     webgazer.reg.RidgeRegThreaded.prototype.predict = function(eyesObj) {
-        console.log("LOGGING..");
+        console.log('LOGGING..');
         if (!eyesObj) {
             return null;
         }
@@ -10054,7 +10089,7 @@ var mosseFilterResponses = function() {
         predictedX = Math.floor(predictedX);
         predictedY = Math.floor(predictedY);
 
-        console.log("PredicedX");
+        console.log('PredicedX');
         console.log(predictedX);
         console.log(predictedY);
 
@@ -10095,12 +10130,13 @@ var mosseFilterResponses = function() {
 }(window));
 ;
 
+'use strict';
 (function() {
 
     self.webgazer = self.webgazer || {};
     self.webgazer.util = self.webgazer.util || {};
     self.webgazer.mat = self.webgazer.mat || {};
-    
+
     /**
      * Eye class, represents an eye patch detected in the video stream
      * @param {ImageData} patch - the image data corresponding to an eye
@@ -10116,8 +10152,8 @@ var mosseFilterResponses = function() {
         this.width = width;
         this.height = height;
     };
-    
-    
+
+
     //Data Window class
     //operates like an array but 'wraps' data around to keep the array at a fixed windowSize
     /**
@@ -10191,10 +10227,10 @@ var mosseFilterResponses = function() {
     //Helper functions
     /**
      * Grayscales an image patch. Can be used for the whole canvas, detected face, detected eye, etc.
-     * @param  {ImageData} imageData - image data to be grayscaled
+     * @param  {Array} imageData - image data to be grayscaled
      * @param  {Number} imageWidth  - width of image data to be grayscaled
      * @param  {Number} imageHeight - height of image data to be grayscaled
-     * @return {ImageData} grayscaledImage
+     * @return {Array} grayscaledImage
      */
     self.webgazer.util.grayscale = function(imageData, imageWidth, imageHeight){
         //TODO implement ourselves to remove dependency
@@ -10203,13 +10239,31 @@ var mosseFilterResponses = function() {
 
     /**
      * Increase contrast of an image
-     * @param {ImageData} grayscaleImageSrc - grayscale integer array
+     * @param {Array} grayscaleImageSrc - grayscale integer array
      * @param {Number} step - sampling rate, control performance
      * @param {Array} destinationImage - array to hold the resulting image
      */
     self.webgazer.util.equalizeHistogram = function(grayscaleImageSrc, step, destinationImage) {
         //TODO implement ourselves to remove dependency
         return objectdetect.equalizeHistogram(grayscaleImageSrc, step, destinationImage);
+    };
+
+    self.webgazer.util.threshold = function(data, threshold) {
+      for (let i = 0; i < data.length; i++) {
+        data[i] = (data[i] > threshold) ? 255 : 0;
+      }
+      return data;
+    };
+
+    self.webgazer.util.correlation = function(data1, data2) {
+      const length = Math.min(data1.length, data2.length);
+      let count = 0;
+      for (let i = 0; i < length; i++) {
+        if (data1[i] === data2[i]) {
+          count++;
+        }
+      }
+      return count / Math.max(data1.length, data2.length);
     };
 
     /**
@@ -10237,7 +10291,7 @@ var mosseFilterResponses = function() {
 
         return tempCanvas.getContext('2d').getImageData(0, 0, resizeWidth, resizeHeight);
     };
-    
+
     /**
      * Checks if the prediction is within the boundaries of the viewport and constrains it
      * @param  {Array} prediction [x,y] - predicted gaze coordinates
@@ -10372,7 +10426,7 @@ var mosseFilterResponses = function() {
         this.P = P_initial; //Initial covariance matrix
         this.X = X_initial; //Initial guess of measurement
     };
-    
+
     /**
      * Get Kalman next filtered value and update the internal state
      * @param {Array} z - the new measurement
@@ -10406,15 +10460,22 @@ var mosseFilterResponses = function() {
       this.X = add(X_p, mult(K, y));
       this.P = mult(sub(identity(K.length), mult(K,this.H)), P_p);
       return transpose(mult(this.H, this.X))[0]; //Transforms the predicted state back into it's measurement form
-    }
+    };
 
 }());
 ;
 
 (function(window, undefined) {
+    /*
+        This is a self invoking function.
+        Probably used to make execution faster ( https://stackoverflow.com/questions/2716069/how-does-this-javascript-jquery-syntax-work-function-window-undefined )
+        Function expressions can be made "self-invoking".
+        A self-invoking expression is invoked (started) automatically, without being called.
+    */
     console.log('initializing webgazer');
     //strict mode for type safety
-    "use strict";
+    /* https://www.w3schools.com/js/js_strict.asp */
+    'use strict';
 
     //auto invoke function to bind our own copy of window and undefined
 
@@ -10423,6 +10484,11 @@ var mosseFilterResponses = function() {
     webgazer.tracker = webgazer.tracker || {};
     webgazer.reg = webgazer.reg || {};
     webgazer.params = webgazer.params || {};
+    /*
+        webgazer.reg = webgazer.reg || {};
+        This means that if window.google doesn't have value (undefined, null) then use {}.
+        It is a way of assigning a default value to a variable in JavaScript.
+    */
 
     //PRIVATE VARIABLES
 
@@ -10436,6 +10502,7 @@ var mosseFilterResponses = function() {
     webgazer.params.imgHeight = 720;
 
     //Params to clmtrackr and getUserMedia constraints
+    /* https://github.com/auduno/clmtrackr */
     webgazer.params.clmParams = webgazer.params.clmParams || {useWebGL : true};
     webgazer.params.camConstraints = webgazer.params.camConstraints || { video:true };
 
@@ -10468,6 +10535,7 @@ var mosseFilterResponses = function() {
     //Types that regression systems should handle
     //Describes the source of data so that regression systems may ignore or handle differently the various generating events
     var eventTypes = ['click', 'move'];
+
     
     //movelistener timeout clock parameters
     var moveClock = performance.now();
@@ -10477,6 +10545,10 @@ var mosseFilterResponses = function() {
     var curTracker = new webgazer.tracker.ClmGaze();
     var regs = [new webgazer.reg.RidgeReg()];
     var blinkDetector = new webgazer.BlinkDetector();
+    /*
+    Assignments are made from other files
+    exp: webgazer.BlinkDetector = function(blinkWindow) { ...
+    */
 
     //lookup tables
     var curTrackerMap = {
@@ -10552,7 +10624,8 @@ var mosseFilterResponses = function() {
     function getPrediction(regModelIndex) {
         var predictions = [];
         var features = getPupilFeatures(videoElementCanvas, webgazer.params.imgWidth, webgazer.params.imgHeight);
-        if (regs.length == 0) {
+
+        if (regs.length === 0) {
             console.log('regression not set, call setRegression()');
             return null;
         }
@@ -10560,12 +10633,12 @@ var mosseFilterResponses = function() {
             predictions.push(regs[reg].predict(features));
         }
         if (regModelIndex !== undefined) {
-            return predictions[regModelIndex] == null ? null : {
+            return predictions[regModelIndex] === null ? null : {
                 'x' : predictions[regModelIndex].x,
                 'y' : predictions[regModelIndex].y
             };
         } else {
-            return predictions.length == 0 || predictions[0] == null ? null : {
+            return predictions.length === 0 || predictions[0] === null ? null : {
                 'x' : predictions[0].x,
                 'y' : predictions[0].y,
                 'all' : predictions
@@ -10611,11 +10684,15 @@ var mosseFilterResponses = function() {
      * @returns {null}
      */
     var recordScreenPosition = function(x, y, eventType) {
+        /* 
+            Sends click and move events to regression model
+            Called by moveListener and clickListener
+        */
         if (paused) {
             return;
         }
         var features = getPupilFeatures(videoElementCanvas, webgazer.params.imgWidth, webgazer.params.imgHeight);
-        if (regs.length == 0) {
+        if (regs.length === 0) {
             console.log('regression not set, call setRegression()');
             return null;
         }
@@ -10623,6 +10700,31 @@ var mosseFilterResponses = function() {
             regs[reg].addData(features, [x, y], eventType);
         }
     };
+    /* HOHEY */
+    webgazer.addData = recordScreenPosition;
+    webgazer.addDataGetFeature = function(x, y, eventType) {
+        /* 
+            Sends click and move events to regression model
+            Called by moveListener and clickListener
+        */
+        if (paused) {
+            return;
+        }
+        var features = getPupilFeatures(videoElementCanvas, webgazer.params.imgWidth, webgazer.params.imgHeight);
+        if (regs.length === 0) {
+            console.log('regression not set, call setRegression()');
+            return null;
+        }
+        for (var reg in regs) {
+            regs[reg].addData(features, [x, y], eventType);
+        }
+        return features;
+    };
+    webgazer.removeMouseEventListeners = removeMouseEventListeners;
+
+
+    /* HOHEY END*/
+
 
     /**
      * Records click data and passes it to the regression model
@@ -10749,7 +10851,7 @@ var mosseFilterResponses = function() {
     webgazer.begin = function(onFail) {
         loadGlobalData();
 
-        onFail = onFail || function() {console.log("No stream")};
+        onFail = onFail || function() {console.log('No stream')};
 
         if (debugVideoLoc) {
             init(debugVideoLoc);
@@ -10789,7 +10891,7 @@ var mosseFilterResponses = function() {
      * @returns {boolean} if webgazer is ready
      */
     webgazer.isReady = function() {
-        if (videoElementCanvas == null) {
+        if (videoElementCanvas === null) {
             return false;
         }
         paintCurrentFrame(videoElementCanvas, webgazer.params.imgWidth, webgazer.params.imgHeight);
@@ -10907,7 +11009,7 @@ var mosseFilterResponses = function() {
      * @return {webgazer} this
      */
     webgazer.setTracker = function(name) {
-        if (curTrackerMap[name] == undefined) {
+        if (curTrackerMap[name] === undefined) {
             console.log('Invalid tracker selection');
             console.log('Options are: ');
             for (var t in curTrackerMap) {
@@ -10925,7 +11027,7 @@ var mosseFilterResponses = function() {
      * @return {webgazer} this
      */
     webgazer.setRegression = function(name) {
-        if (regressionMap[name] == undefined) {
+        if (regressionMap[name] === undefined) {
             console.log('Invalid regression selection');
             console.log('Options are: ');
             for (var reg in regressionMap) {

@@ -17,15 +17,28 @@
               left:-100%; right:-100%;
               margin:auto;
           }
+
+          button {
+              background-color: #4CAF50;
+              border: none;
+              color: white;
+              padding: 15px 32px;
+              text-align: center;
+              text-decoration: none;
+              display: inline-block;
+              font-size: 16px;
+              margin: 4px 2px;
+              cursor: pointer;
+          }
       </style>
 
     </HEAD>
 
     <canvas id="mainCanvas"></canvas>
-    <button id="startButton" onclick="stopVideoFeed()">Start</button>
+    <button id="startButton" onclick="faceDetected()">Start</button>
 
       <script src="webgazer.js"></script>
-      <script src="demo.js"> </script>
+      <script src="experiment.js"> </script>
       <script src="calibration.js"></script>
       <script type="text/javascript">
         window.onload = function()
@@ -34,6 +47,7 @@
             .setTracker('clmtrackr')
             .begin()
             .showPredictionPoints(true);
+
 
 
             var videoFeed = showVideoFeed();
@@ -100,6 +114,7 @@
           {
             if (webgazer.isReady()) {
                 setup();
+                webgazer.removeMouseEventListeners();
             } else {
                 setTimeout(checkIfReady, 100);
           }
@@ -110,11 +125,25 @@
 
         function stopVideoFeed()
         {
-            document.body.removeChild(document.getElementById('webgazerVideoCanvas'));
-            document.body.removeChild(document.getElementById('webgazerVideoFeed'));
-            document.body.removeChild(document.getElementById('overlay'));
+            // Don't destroy. Web gazer uses it to get features(probably)
+           document.getElementById('webgazerVideoFeed').style.display = "none";
+           document.body.removeChild(document.getElementById('overlay'));
+			     document.body.removeChild(document.getElementById('startButton'));
 
-            StartCalibration();
+
+        }
+
+        function faceDetected()
+        {
+        	stopVideoFeed();
+        	StartCalibration(onCalibrationEnd);
+        }
+
+        function onCalibrationEnd()
+        {
+        	console.log("onCalibrationEnd");
+        	startExperiment();
+
         }
 
       </script>
