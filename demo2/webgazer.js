@@ -10466,15 +10466,8 @@ var mosseFilterResponses = function() {
 ;
 
 (function(window, undefined) {
-    /*
-        This is a self invoking function.
-        Probably used to make execution faster ( https://stackoverflow.com/questions/2716069/how-does-this-javascript-jquery-syntax-work-function-window-undefined )
-        Function expressions can be made "self-invoking".
-        A self-invoking expression is invoked (started) automatically, without being called.
-    */
     console.log('initializing webgazer');
     //strict mode for type safety
-    /* https://www.w3schools.com/js/js_strict.asp */
     'use strict';
 
     //auto invoke function to bind our own copy of window and undefined
@@ -10484,11 +10477,6 @@ var mosseFilterResponses = function() {
     webgazer.tracker = webgazer.tracker || {};
     webgazer.reg = webgazer.reg || {};
     webgazer.params = webgazer.params || {};
-    /*
-        webgazer.reg = webgazer.reg || {};
-        This means that if window.google doesn't have value (undefined, null) then use {}.
-        It is a way of assigning a default value to a variable in JavaScript.
-    */
 
     //PRIVATE VARIABLES
 
@@ -10502,7 +10490,6 @@ var mosseFilterResponses = function() {
     webgazer.params.imgHeight = 720;
 
     //Params to clmtrackr and getUserMedia constraints
-    /* https://github.com/auduno/clmtrackr */
     webgazer.params.clmParams = webgazer.params.clmParams || {useWebGL : true};
     webgazer.params.camConstraints = webgazer.params.camConstraints || { video:true };
 
@@ -10535,7 +10522,6 @@ var mosseFilterResponses = function() {
     //Types that regression systems should handle
     //Describes the source of data so that regression systems may ignore or handle differently the various generating events
     var eventTypes = ['click', 'move'];
-
     
     //movelistener timeout clock parameters
     var moveClock = performance.now();
@@ -10545,10 +10531,6 @@ var mosseFilterResponses = function() {
     var curTracker = new webgazer.tracker.ClmGaze();
     var regs = [new webgazer.reg.RidgeReg()];
     var blinkDetector = new webgazer.BlinkDetector();
-    /*
-    Assignments are made from other files
-    exp: webgazer.BlinkDetector = function(blinkWindow) { ...
-    */
 
     //lookup tables
     var curTrackerMap = {
@@ -10624,7 +10606,6 @@ var mosseFilterResponses = function() {
     function getPrediction(regModelIndex) {
         var predictions = [];
         var features = getPupilFeatures(videoElementCanvas, webgazer.params.imgWidth, webgazer.params.imgHeight);
-
         if (regs.length === 0) {
             console.log('regression not set, call setRegression()');
             return null;
@@ -10684,10 +10665,6 @@ var mosseFilterResponses = function() {
      * @returns {null}
      */
     var recordScreenPosition = function(x, y, eventType) {
-        /* 
-            Sends click and move events to regression model
-            Called by moveListener and clickListener
-        */
         if (paused) {
             return;
         }
@@ -10700,31 +10677,6 @@ var mosseFilterResponses = function() {
             regs[reg].addData(features, [x, y], eventType);
         }
     };
-    /* HOHEY */
-    webgazer.addData = recordScreenPosition;
-    webgazer.addDataGetFeature = function(x, y, eventType) {
-        /* 
-            Sends click and move events to regression model
-            Called by moveListener and clickListener
-        */
-        if (paused) {
-            return;
-        }
-        var features = getPupilFeatures(videoElementCanvas, webgazer.params.imgWidth, webgazer.params.imgHeight);
-        if (regs.length === 0) {
-            console.log('regression not set, call setRegression()');
-            return null;
-        }
-        for (var reg in regs) {
-            regs[reg].addData(features, [x, y], eventType);
-        }
-        return features;
-    };
-    webgazer.removeMouseEventListeners = removeMouseEventListeners;
-
-
-    /* HOHEY END*/
-
 
     /**
      * Records click data and passes it to the regression model
@@ -10782,6 +10734,7 @@ var mosseFilterResponses = function() {
         for (var reg in regs) {
             regs[reg].setData(storage.data);
         }
+        console.log("Load global");
     }
 
    /**
@@ -11129,6 +11082,77 @@ var mosseFilterResponses = function() {
     webgazer.params.getEventTypes = function() {
         return eventTypes.slice();
     }
+
+    /* HOHEY */
+
+    webgazer.addDataWF = function(x, y, eventType, features) 
+    {
+        if (paused) {
+            return;
+        }
+        if (regs.length === 0) {
+            console.log('regression not set, call setRegression()');
+            return null;
+        }
+        for (var reg in regs) {
+            regs[reg].addData(features, [x, y], eventType);
+        }
+    };
+    webgazer.addData = function(x, y, eventType) 
+    {
+        var features = getPupilFeatures(videoElementCanvas, webgazer.params.imgWidth, webgazer.params.imgHeight);
+        if (paused) {
+            return;
+        }
+        if (regs.length === 0) {
+            console.log('regression not set, call setRegression()');
+            return null;
+        }
+        for (var reg in regs) {
+            regs[reg].addData(features, [x, y], eventType);
+        }
+        return features;
+    };
+
+    webgazer.removeMouseEventListeners = removeMouseEventListeners;
+    webgazer.getEyeFeatureVec = function()
+    {
+        return getPupilFeatures(videoElementCanvas, webgazer.params.imgWidth, webgazer.params.imgHeight);
+        
+    }
+
+    webgazer.resizeEyeFeatures = function(eyes)
+    {
+        var resizeWidth = 10;
+        var resizeHeight = 6;
+
+        var resizedLeft = webgazer.util.resizeEye(eyes.left, resizeWidth, resizeHeight);
+        var resizedright = webgazer.util.resizeEye(eyes.right, resizeWidth, resizeHeight);
+
+        var leftGray = webgazer.util.grayscale(resizedLeft.data, resizedLeft.width, resizedLeft.height);
+        var rightGray = webgazer.util.grayscale(resizedright.data, resizedright.width, resizedright.height);
+
+        var histLeft = [];
+        webgazer.util.equalizeHistogram(leftGray, 5, histLeft);
+        var histRight = [];
+        webgazer.util.equalizeHistogram(rightGray, 5, histRight);
+
+        var leftGrayArray = Array.prototype.slice.call(histLeft);
+        var rightGrayArray = Array.prototype.slice.call(histRight);
+
+        return leftGrayArray.concat(rightGrayArray);
+    }
+
+    webgazer.reset = function()
+    {
+        for (var reg in regs) 
+        {
+            regs[reg].setData([]);
+            console.log("Holo");
+        }
+    }
+
+    /* HOHEY END */
     
 }(window));
 ;

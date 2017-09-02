@@ -27,13 +27,18 @@ function getWindowSize()
 
 function startExperiment()
 {
+  document.getElementById("expertimentInstructions").style.display = 'block';
+
+  setTimeout(function(){ experiment.start(); }, 3000);
+  
+}
+
+experiment.start = function()
+{
+  document.getElementById("expertimentInstructions").style.display = 'none';
+
   webgazer.setGazeListener(onGazeData);
 
-  window.onbeforeunload = function()
-  {
-    //webgazer.end(); //Uncomment if you want to save the data even if you reload the page.
-    window.localStorage.clear(); //Comment out if you want to save data across different sessions
-  }
   experiment.started = true;
   experiment.windowSize = getWindowSize();
   experiment.recordingQ = [];
@@ -66,11 +71,12 @@ function startExperiment()
     }, DURATION);
 }
 
+
 function startRecording(imageNumber)
 {
   var imagePath = "./imgs/img" + String(imageNumber) + ".jpg";
   experiment.imageLoaded = false;
-  currentRecording =
+  experiment.currentRecording =
   {
     imageSize : null,
     imageScaledSize : null,
@@ -78,15 +84,16 @@ function startRecording(imageNumber)
     gazeData : [],
     addGazeData : function(x,y,elapsedTime)
     {
+        var windowSize = experiment.windowSize;
         var leftX = (windowSize.width - this.imageScaledSize[0])/2;
         var upY = (windowSize.height - this.imageScaledSize[1])/2;
 
         var normalizedX = (x - leftX)/this.imageScaledSize[0];
         var normalizedY = (y - upY)/this.imageScaledSize[1];
-        this.gazeData.push([normalizedX,normalizedY,x,y,elapsedTime]);
+        experiment.currentRecording.gazeData.push([normalizedX,normalizedY,x,y,elapsedTime,webgazer.getEyeFeatureVec()]);
     }
   };
-  experiment.recordingQ.push(currentRecording);
+  experiment.recordingQ.push(experiment.currentRecording);
   changeImage(imagePath);
 
 }
@@ -96,7 +103,7 @@ function changeImage(path)
     img.src = path
     img.onload = function()
     {
-        currentRecording.imageSize = [img.naturalWidth,img.naturalHeight];
+        experiment.currentRecording.imageSize = [img.naturalWidth,img.naturalHeight];
         var windowSize = experiment.windowSize;
         var imgRatio = img.naturalWidth / img.naturalHeight;
         var windowRatio = windowSize.width / windowSize.height;
@@ -109,55 +116,33 @@ function changeImage(path)
           img.height = windowSize.height;
           img.width = img.height * (img.naturalWidth / img.naturalHeight);
         }
-        currentRecording.imageScaledSize = [img.width,img.height];
-        imageLoaded = true;
+        experiment.currentRecording.imageScaledSize = [img.width,img.height];
+        experiment.imageLoaded = true;
     }
 }
 
 function onGazeData(data,elapsedTime)
 {
+    console.log("onGazeData");
     if (data == null || !experiment.imageLoaded)
     {
         return;
     }
     var xprediction = data.x; //these x coordinates are relative to the viewport
     var yprediction = data.y; //these y coordinates are relative to the viewport
-    if(currentRecording != null)
+    if(experiment.currentRecording != null)
     {
-        currentRecording.addGazeData(data.x,data.y,elapsedTime);
+        console.log("addGazeData!!");
+        experiment.currentRecording.addGazeData(data.x,data.y,elapsedTime);
     }
 }
 
 function endExperiment()
 {
     console.log(experiment.data);
-    currentRecording = null;
+    experiment.currentRecording = null;
     imageLoaded = false;
-    var str = JSON.stringify(experiment.data);
-    console.log("Data\n" + str)
-    console.log("Data End!");
-
-    //Save the file contents as a DataURI
-    var dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(str);
-    console.log("Uri" + dataUri);
-    document.getElementById("image").style.display = "none";
-
-    var textToSave = str
-    var textToSaveAsBlob = new Blob([textToSave], {type:"text/plain"});
-    var textToSaveAsURL = window.URL.createObjectURL(textToSaveAsBlob);
-    var fileNameToSaveAs = "result.json";
- 
-    var downloadLink = document.createElement("a");
-    downloadLink.download = fileNameToSaveAs;
-    downloadLink.innerHTML = "Download File";
-    downloadLink.href = textToSaveAsURL;
-    downloadLink.style.display = "none";
-    document.body.appendChild(downloadLink);
- 
-    downloadLink.click();
-    
-    //Write it as the href for the link
-    //var link = document.getElementById('link').href = dataUri;
+    data.save();
 
 }
 
