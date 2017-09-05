@@ -76,18 +76,29 @@
             /* 
               initialize regression model and reset all data and parameters
             */
-            hohey.init();
             if( webgazer.isReady() )
             {
               showVideoFeed();
               //webgazer.reset();
             }else
             {
-              webgazer.addRegressionModule("hohey",hohey.model);
-              webgazer.setRegression("hohey")
-              .setTracker('clmtrackr')
-              .begin()
-              .showPredictionPoints(true);
+              var modelName = "ridge";
+              if(modelName == "hohey")
+              {
+                hohey.init();
+                webgazer.setRegression("hohey")
+                .setTracker('clmtrackr')
+                .begin()
+                .showPredictionPoints(false);
+              }else
+              {
+                webgazer.setRegression("ridge")
+                .setTracker('clmtrackr')
+                .begin()
+                .showPredictionPoints(false);
+              }
+              //webgazer.addRegressionModule("hohey",hohey.model);
+              
             }
 
             var startButton = document.createElement('button');

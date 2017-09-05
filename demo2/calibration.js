@@ -1,6 +1,6 @@
 
 var calibration = {}
-var CALIBRATION_TIMEOUT = 4000;
+var CALIBRATION_TIMEOUT = 10000;
 calibration.timeout = null;
 
 calibration.addData = function(feature,posX,posY)
@@ -45,7 +45,7 @@ calibration.start = function(onCalibrationEnd,onCalibrationTimeout)
   
   var margin = TrTOutherRadius + 5;
   calibration.targetPositions = [];
-  var rowNumber = 3;
+  var rowNumber = 4;
   var columnNumber = 5;
   var xMarginBetween = (calibration.width - 2 * margin) / (columnNumber - 1);
   var yMarginBetween = (calibration.height - 2 * margin) / (rowNumber - 1);
@@ -61,19 +61,19 @@ calibration.start = function(onCalibrationEnd,onCalibrationTimeout)
     }
   }
   // To gain some time
-  var rowNumber = 2;
-  var columnNumber = 2;
-  var xMarginBetween = (calibration.width - 2 * margin) / (columnNumber - 1);
-  var yMarginBetween = (calibration.height - 2 * margin) / (rowNumber - 1);
-  for(var x = 0; x < columnNumber; x ++)
-  {
-    var posX = xMarginBetween * x + margin;
-    for(var y = 0; y < rowNumber; y ++)
-    {
-      var posY = yMarginBetween * y + margin;
-      calibration.targetPositions.push([posX,posY]);
-    }
-  }
+  // var rowNumber = 2;
+  // var columnNumber = 2;
+  // var xMarginBetween = (calibration.width - 2 * margin) / (columnNumber - 1);
+  // var yMarginBetween = (calibration.height - 2 * margin) / (rowNumber - 1);
+  // for(var x = 0; x < columnNumber; x ++)
+  // {
+  //   var posX = xMarginBetween * x + margin;
+  //   for(var y = 0; y < rowNumber; y ++)
+  //   {
+  //     var posY = yMarginBetween * y + margin;
+  //     calibration.targetPositions.push([posX,posY]);
+  //   }
+  // }
 
   calibration.lastTargetPosIdx = -1;
   NextTarget();
@@ -199,7 +199,7 @@ function onCallibrationMouseClick(evt)
         document.getElementById("calibrationCheckInstructions").style.display = 'block';
         calibration.target = null;
         calibration.endCalibration();
-        setTimeout(function(){ checkCalibration(); }, 3000);
+        setTimeout(function(){ checkCalibration(); }, 2000);
       }
   }
 
@@ -219,9 +219,9 @@ function NextCheckTarget()
     x:tPos[0],
     y:tPos[1],
     radius:7,
-    sqr_radius: 30 * 30,
-    outherRadius: 30,
-    health: 5,
+    sqr_radius: 100 * 100,
+    outherRadius:100,
+    health: 3,
     hover:false,
     draw:function(context) 
     {
@@ -262,7 +262,7 @@ function NextCheckTarget()
   {
     clearTimeout(calibration.timeout);
   }
-  //calibration.timeout = setTimeout(calibrationCheckTimeout,CALIBRATION_TIMEOUT);
+  calibration.timeout = setTimeout(calibrationCheckTimeout,CALIBRATION_TIMEOUT);
 
   return true;
 }
@@ -271,7 +271,7 @@ function NextCheckTarget()
 
 function checkCalibration()
 {
-  hohey.train = false;
+  //hohey.train = false;
 	
   var w = calibration.width;
   var h = calibration.height;
@@ -289,7 +289,8 @@ function checkCalibration()
   calibration.endCheck = function()
   {
       clearInterval(drawLoop);
-      calibration.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      calibration.context.clearRect(0, 0, calibration.canvas.width, calibration.canvas.height);
+      
   }
 }
 

@@ -1,5 +1,6 @@
 var hohey = {}
 hohey.train = false;
+hohey.avLoss = -1;
 
 hohey.init = function()
 {
@@ -33,7 +34,7 @@ hohey.init = function()
                     var N = data.length;
                     var netx = new convnetjs.Vol(1,1,120);
                     var avloss = 0.0;
-                    for(var iters = 0; iters < 50; iters++) 
+                    for(var iters = 0; iters < 250; iters++) 
                     {
                         for(var ix = 0;ix < N; ix++)
                         {
@@ -43,10 +44,11 @@ hohey.init = function()
                         }
                     }
                     avloss /= N * iters * 2;
-                    console.log("AvgLoss: " + avloss);
+                    console.log("loss",avloss);
+                    hohey.avLoss = avloss;
                 };
             }
-            setTimeout(hohey.update, 10);
+            setTimeout(hohey.update, 5);
         }
         hohey.update();
     }

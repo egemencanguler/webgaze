@@ -28,6 +28,7 @@ function getWindowSize()
 function startExperiment()
 {
   document.getElementById("expertimentInstructions").style.display = 'block';
+  document.getElementById("calibrationCheckInstructions").style.display = 'none';
 
   setTimeout(function(){ experiment.start(); }, 3000);
   
@@ -123,7 +124,6 @@ function changeImage(path)
 
 function onGazeData(data,elapsedTime)
 {
-    console.log("onGazeData");
     if (data == null || !experiment.imageLoaded)
     {
         return;
@@ -132,13 +132,14 @@ function onGazeData(data,elapsedTime)
     var yprediction = data.y; //these y coordinates are relative to the viewport
     if(experiment.currentRecording != null)
     {
-        console.log("addGazeData!!");
         experiment.currentRecording.addGazeData(data.x,data.y,elapsedTime);
     }
 }
 
 function endExperiment()
 {
+
+    
     console.log(experiment.data);
     experiment.currentRecording = null;
     imageLoaded = false;
