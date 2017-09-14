@@ -26,7 +26,6 @@ calibration.start = function(onCalibrationEnd,onCalibrationTimeout)
 {
   instructions.hide(instructions.startCalibration);
 
-  hohey.train = true;
   var canvas = document.getElementById('mainCanvas');
   var context = canvas.getContext('2d');
   
@@ -49,8 +48,12 @@ calibration.start = function(onCalibrationEnd,onCalibrationTimeout)
   var columnNumber = 5;
   var xMarginBetween = (calibration.width - 2 * margin) / (columnNumber - 1);
   var yMarginBetween = (calibration.height - 2 * margin) / (rowNumber - 1);
+  if(DEBUG)
+  {
+    rowNumber = 1;
+    columnNumber = 5;
+  }
 
-  // First round 
   for(var x = 0; x < columnNumber; x ++)
   {
     var posX = xMarginBetween * x + margin;
@@ -60,20 +63,6 @@ calibration.start = function(onCalibrationEnd,onCalibrationTimeout)
       calibration.targetPositions.push([posX,posY]);
     }
   }
-  // To gain some time
-  // var rowNumber = 2;
-  // var columnNumber = 2;
-  // var xMarginBetween = (calibration.width - 2 * margin) / (columnNumber - 1);
-  // var yMarginBetween = (calibration.height - 2 * margin) / (rowNumber - 1);
-  // for(var x = 0; x < columnNumber; x ++)
-  // {
-  //   var posX = xMarginBetween * x + margin;
-  //   for(var y = 0; y < rowNumber; y ++)
-  //   {
-  //     var posY = yMarginBetween * y + margin;
-  //     calibration.targetPositions.push([posX,posY]);
-  //   }
-  // }
 
   calibration.lastTargetPosIdx = -1;
   NextTarget();
@@ -351,6 +340,12 @@ function checkDraw()
 
 function calibrationCheckTimeout()
 {
+    if(DEBUG)
+    {
+      calibration.endCheck();
+      calibration.calibrationEnd();
+      return;
+    }
     calibration.context.clearRect(0, 0, calibration.canvas.width, calibration.canvas.height);
     console.log("Time Out!");
     calibration.endCheck();

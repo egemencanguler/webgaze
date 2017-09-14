@@ -72,19 +72,18 @@
         Kalibrasyon başarısız oldu lütfen sayfayı yenileyip tekrar deneyin.
       </div>
 
-      <script src="model/convnet-min.js"></script>
-      <script src="model/hohey.js"></script>
       <script src="webgazer.js"></script>
       <script src="data_man.js"></script>
       <script src="experiment.js"> </script>
       <script src="calibration.js"></script>
       <script type="text/javascript">
-        var DEBUG = false;
+        var DEBUG = true;
+        var instructions = {}
+
         window.onload = function()
         {
             setupWebGazer();
         }
-        var instructions = {}
         instructions.hide = function(ins)
         {
             setTimeout(function(){ins.style.display = 'none';}, 100);
@@ -107,23 +106,10 @@
               //webgazer.reset();
             }else
             {
-              var modelName = "ridge";
-              if(modelName == "hohey")
-              {
-                hohey.init();
-                webgazer.addRegressionModule("hohey",hohey.model);
-                webgazer.setRegression("hohey")
+              webgazer.setRegression("ridge")
                 .setTracker('clmtrackr')
                 .begin()
                 .showPredictionPoints(DEBUG);
-              }else
-              {
-                webgazer.setRegression("ridge")
-                .setTracker('clmtrackr')
-                .begin()
-                .showPredictionPoints(DEBUG);
-              }
-              
             }
 
             var startButton = document.createElement('button');
@@ -175,7 +161,6 @@
             instructions.hide(instructions.experiment);
             instructions.hide(instructions.tryAgain);
             instructions.hide(instructions.insExperimentEnd);
-
 
             function checkIfReady()
             {

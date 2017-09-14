@@ -5,11 +5,51 @@ experiment.currentRecording = null;
 experiment.imageLoaded = false; // start recording data when image is loaded
 experiment.data = null;
 experiment.recordingQ = null;
-experiment.windowSize = null;
+experiment.windowSize = getWindowSize();
 
 // show each image for spesified duration
-//var DURATION = 3000;
 var DURATION = 3000;
+experiment.images = [];
+
+for(var i = 0; i < 5; i ++)
+{
+  var img = document.createElement("img");
+  img.id = "img" + String(i);
+  img.style.display = 'none';
+  img.src = "./imgs/img" + String(i) + ".jpg";
+  experiment.images.push(img);
+  img.onload = function()
+  {
+    console.log("Image Loaded" + this.id);
+    var windowSize = experiment.windowSize;
+    var imgRatio = this.naturalWidth / this.naturalHeight;
+    var windowRatio = windowSize.width / windowSize.height;
+    if(imgRatio > windowRatio)
+    {
+      this.width = windowSize.width;
+      this.height = this.width * (this.naturalHeight / this.naturalWidth);
+    }else
+    {
+      this.height = windowSize.height;
+      this.width = this.height * (this.naturalWidth / this.naturalHeight);
+    }
+    this.scaledSize = [this.width,this.height];
+    this.imageSize = [this.naturalWidth,this.naturalHeight];
+
+  }
+  img.hide = function()
+  {
+      this.style.display = 'none';
+  }
+  img.show = function()
+  {
+      this.style.display = 'block';
+  }
+  document.body.appendChild(img);
+}
+
+
+
 
 function getWindowSize()
 {
@@ -29,7 +69,6 @@ function startExperiment()
 {
   instructions.show(instructions.experiment);
   setTimeout(function(){ experiment.start(); }, 3000);
-
 }
 
 experiment.start = function()
@@ -47,14 +86,9 @@ experiment.start = function()
   };
 
   // Create Image Container
-  var img = document.createElement("img");
-  img.id = "image";
-  document.body.appendChild(img);
-
   numberOfImages = 5;
   var number = 0;
   startRecording(number ++);
-  /* ! */
 
   var refreshIntervalId = setInterval(
     function()
@@ -72,8 +106,8 @@ experiment.start = function()
   if(DEBUG)
   {
     debugDraw();
-
   }
+
   var canvas = document.getElementById('mainCanvas');
   var context = canvas.getContext('2d');
   context.clearRect(0, 0, canvas.width, canvas.height);
@@ -83,12 +117,12 @@ experiment.start = function()
 
 function startRecording(imageNumber)
 {
-  var imagePath = "./imgs/img" + String(imageNumber) + ".jpg";
-  experiment.imageLoaded = false;
+  var img = experiment.images[imageNumber];
+
   experiment.currentRecording =
   {
-    imageSize : null,
-    imageScaledSize : null,
+    imageSize : [img.naturalWidth,img.naturalHeight],
+    imageScaledSize : img.scaledSize,
     imageNumber : imageNumber,
     gazeData : [],
     addGazeData : function(x,y,elapsedTime)
@@ -103,36 +137,17 @@ function startRecording(imageNumber)
     }
   };
   experiment.recordingQ.push(experiment.currentRecording);
-  changeImage(imagePath);
-
-}
-function changeImage(path)
-{
-    var img = document.getElementById("image");
-    img.src = path
-    img.onload = function()
-    {
-        experiment.currentRecording.imageSize = [img.naturalWidth,img.naturalHeight];
-        var windowSize = experiment.windowSize;
-        var imgRatio = img.naturalWidth / img.naturalHeight;
-        var windowRatio = windowSize.width / windowSize.height;
-        if(imgRatio > windowRatio)
-        {
-          img.width = windowSize.width;
-          img.height = img.width * (img.naturalHeight / img.naturalWidth);
-        }else
-        {
-          img.height = windowSize.height;
-          img.width = img.height * (img.naturalWidth / img.naturalHeight);
-        }
-        experiment.currentRecording.imageScaledSize = [img.width,img.height];
-        experiment.imageLoaded = true;
-    }
+  var oldImgIndex = imageNumber - 1;
+  if(oldImgIndex >= 0)
+  {
+    experiment.images[oldImgIndex].hide();
+  }
+  img.show();
 }
 
 function onGazeData(data,elapsedTime)
 {
-    if (data == null || !experiment.imageLoaded)
+    if (data == null)
     {
         return;
     }
@@ -146,13 +161,12 @@ function onGazeData(data,elapsedTime)
 
 function endExperiment()
 {
-
+    experiment.images[4].hide();
+    webgazer.clearGazeListener();
     instructions.show(instructions.insExperimentEnd);
     console.log(experiment.data);
     experiment.currentRecording = null;
-    imageLoaded = false;
     data.save();
-
 }
 
 
@@ -175,13 +189,11 @@ function debugDraw()
           context.arc(point[2], point[3], 10, 0, 2 * Math.PI, false);
           context.fillStyle = "green";
           context.fill();
-
         }
       }
       
 
     }, 30);
-
   
 }
 
