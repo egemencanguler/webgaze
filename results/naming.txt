@@ -1,1 +1,0 @@
-t<TurkerGaze>w<WebGaze>_name_<BatchNumber>

@@ -1,0 +1,55 @@
+<html>
+<head>
+<title>minimal demo</title>
+ 
+<!-- CSS goes here -->
+<style>
+body {
+  background-color: #FFF; /* example... */
+}
+</style>
+ 
+<!-- import convnetjs library -->
+<script src="convnet-min.js"></script>
+ 
+<!-- javascript goes here -->
+<script type="text/javascript">
+ 
+function periodic() {
+  var d = document.getElementById('egdiv');
+  d.innerHTML = 'Random number: ' + Math.random()
+}
+ 
+var net; // declared outside -> global variable in window scope
+function start() 
+{
+	/* Prepare data */
+	var xmlhttp = new XMLHttpRequest();
+	xmlhttp.onreadystatechange = function() 
+	{
+	    if (this.readyState == 4 && this.status == 200) 
+	    {
+	        var result = JSON.parse(this.responseText);
+	        console.log("rf" + result.features.length);
+	        Train(result.features,result.labels);
+	    }
+	};
+	xmlhttp.open("GET", "results.json", true);
+	xmlhttp.send();
+
+	
+// prints 0.50374
+}
+
+
+
+
+
+ 
+</script>
+</head>
+ 
+<body onload="start()">
+<div id="egdiv"></div>
+</body>
+</html>

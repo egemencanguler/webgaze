@@ -1,0 +1,271 @@
+<html>
+<head>
+<title>minimal demo</title>
+ 
+<!-- CSS goes here -->
+<style>
+body {
+  background-color: #FFF; /* example... */
+}
+</style>
+<script src="https://storage.googleapis.com/learnjs-data/deeplearn-latest.js"></script>
+<script src="model/convnet-min.js"></script>
+<script src="model/hohey.js"></script>
+<script src="vectorious.min.js"></script>
+<script type="text/javascript">
+
+
+
+var net; // declared outside -> global variable in window scope
+function start() 
+{
+	/* Prepare data */
+	var xmlhttp = new XMLHttpRequest();
+	xmlhttp.onreadystatechange = function() 
+	{
+	    if (this.readyState == 4 && this.status == 200) 
+	    {
+
+	        var result = JSON.parse(this.responseText);
+
+	        // var convjsModel = new hohey.model();
+	        // hohey.data = result.features;
+	        // hohey.labels = result.labels;
+	        // hohey.train = true;
+			//Deep(result.features,result.labels);
+			//Test(result.features,result.labels);
+
+			var x = result["features"]
+			var y = result["labels"]
+			Train(x,y);
+
+			// x =[[0,1],[0,2],[0,2],[0.5]] ;
+			// y = [0,1,2,3]
+
+			// var model = new Regression(RidgeRegression, {lambda: 0.1});
+			// model.train(x,y);
+
+
+
+	    }
+	};
+	xmlhttp.open("GET", "results.json", true);
+	xmlhttp.send();
+	
+}
+start();
+
+
+
+
+function Deep(features,positions)
+{
+	features = [features[0], features[1]];
+	positions = [positions[0], positions[1]];
+
+	//features = [ [1,2], [3,4],[1,5],[6,7],[8,9] ];
+	//positions =[ [3,1], [7,1], [6,4], [13,-1], [17,-1]];
+	/* INIT */
+	var g = new deeplearn.Graph();
+
+	// Placeholders are input containers. This is the container for where we will
+	// feed an input NDArray when we execute the graph.
+	var inputShape = [120];
+	var inputTensor = g.placeholder('input', inputShape);
+
+	var labelShape = [2];
+	var labelTensor = g.placeholder('label', labelShape);
+
+	// Variables are containers that hold a value that can be updated from
+	// training.
+	// Here we initialize the multiplier variable randomly.
+	var weights = g.variable('weights', deeplearn.Array2D.randNormal([20, 120]));
+	var bias =  g.variable("bias",deeplearn.Array1D.randNormal([20]));
+
+	var weights2 = g.variable('weights2', deeplearn.Array2D.randNormal([2, 20]));
+	var bias2 =  g.variable("bias2",deeplearn.Array1D.randNormal([2]));
+
+	var layer1 = g.add(g.matmul(weights, inputTensor),bias);
+	var relu1 = g.relu(layer1);
+	var outputTensor = g.add(g.matmul(weights2, relu1),bias2);
+
+	var costTensor = g.meanSquaredCost(outputTensor, labelTensor);
+
+	// Tensors, like NDArrays, have a shape attribute.
+	console.log(outputTensor.shape);
+
+
+	/* TRAINING */
+	var learningRate = .001;
+	
+	var math = new deeplearn.NDArrayMathGPU();
+
+	var session = new deeplearn.Session(g, math);
+	var optimizer = new deeplearn.SGDOptimizer(learningRate);
+
+	var inputs = [];
+	for(var i = 0; i < features.length; i ++)
+	{
+		inputs.push(deeplearn.Array1D.new(features[i]));
+	}
+
+	var labels = [];
+	for(var i = 0; i < positions.length; i ++)
+	{
+		labels.push(deeplearn.Array1D.new(positions[i]));
+	}
+
+	// Shuffles inputs and labels and keeps them mutually in sync.
+	var shuffledInputProviderBuilder = new deeplearn.InCPUMemoryShuffledInputProviderBuilder([inputs, labels]);
+	var pro = shuffledInputProviderBuilder.getInputProviders();
+	var inputProvider = pro[0];
+	var labelProvider = pro[1];
+
+	// Maps tensors to InputProviders.
+	var feedEntries = [ {tensor: inputTensor, data: inputProvider}, {tensor: labelTensor, data: labelProvider}	];
+
+	var BATCH_SIZE = inputs.length;
+	var NUM_BATCHES = 5000;
+	for (var i = 0; i < NUM_BATCHES; i++) {
+	  // Wrap session.train in a scope so the cost gets cleaned up automatically.
+	  math.scope(() => {
+	    // Train takes a cost tensor to minimize. Trains one batch. Returns the
+	    // average cost as a Scalar.
+	    var cost = session.train(costTensor, feedEntries, BATCH_SIZE, optimizer, deeplearn.CostReduction.MEAN);
+	    console.log('last average cost (' + i + '): ' + cost.get());
+	  });
+	}
+
+
+	/* PREDICTION */
+
+
+	var test = features[0];
+	// Wrap session.eval in a scope so the intermediate values get cleaned up
+	// automatically.
+	math.scope((keep, track) => {
+	  var testInput = track(deeplearn.Array1D.new(test));
+
+	  // session.eval can take NDArrays as input data.
+	  var testFeedEntries = [{tensor: inputTensor, data: testInput} ];
+
+	  var testOutput = session.eval(outputTensor, testFeedEntries);
+
+	  console.log('---inference output---');
+	  console.log('shape: ' + testOutput.shape);
+	  console.log('value: ' + testOutput.get(0) + "," + testOutput.get(1));
+	  console.log("result: " + positions[0][0] + "," + positions[0][1]);
+	});
+
+	// Cleanup training data.
+	inputs.forEach(input => input.dispose());
+	labels.forEach(label => label.dispose());
+
+}
+
+
+
+function Test(features,positions)
+{
+	//features = [ [1,2], [3,4],[1,5],[6,7],[8,9] ];
+	//positions =[ [3,1], [7,1], [6,4], [13,-1], [17,-1]];
+
+	
+
+
+	/* Build the model */
+
+	var graph = new deeplearn.Graph();
+
+    // This tensor contains the input. In this case, it is a scalar.
+    var inputTensor = graph.placeholder('input', [120]);
+
+    // This tensor contains the target.
+    var outputTensor = graph.placeholder('output', [2]);
+
+    var fullyConnectedLayer1 = graph.layers.dense('dense', inputTensor, 30,(x) => graph.relu(x));
+    //var fullyConnectedLayer2 = graph.layers.dense('dense2', fullyConnectedLayer1, 10, (x) => graph.relu(x));
+
+    var predictionTensor = graph.layers.dense('prediction', fullyConnectedLayer1, 2);
+
+    // We will optimize using mean squared loss.
+    var costTensor = graph.meanSquaredCost(outputTensor, predictionTensor);
+
+    /* Build the model end */
+
+    /* Prepare Inputs */
+	var inputs = [];
+	for(var i = 0; i < features.length; i ++)
+	{
+		inputs.push(deeplearn.Array1D.new(features[i]));
+	}
+
+	var labels = [];
+	for(var i = 0; i < positions.length; i ++)
+	{
+		labels.push(deeplearn.Array1D.new(positions[i]));
+	}
+
+	var shuffledInputProviderBuilder = new deeplearn.InCPUMemoryShuffledInputProviderBuilder([inputs, labels]);
+	var pro = shuffledInputProviderBuilder.getInputProviders();
+	var inputProvider = pro[0];
+	var labelProvider = pro[1];
+
+	var feedEntries = [ {tensor: inputTensor, data: inputProvider}, {tensor: outputTensor, data: labelProvider}	];
+	/* Prepare Inputs End */
+
+    
+
+	/* TRAINING */
+	var math = new deeplearn.NDArrayMathGPU();
+
+	var session = new deeplearn.Session(graph, math);
+	var initialLearningRate = 0.01;
+	var optimizer = new deeplearn.SGDOptimizer(initialLearningRate);
+	
+	var batchSize = inputs.length;
+
+	for(var step = 0; step < 20; step ++)
+	{
+
+		var costValue = -1;
+		math.scope(() => {
+		    // Train takes a cost tensor to minimize. Trains one batch. Returns the
+		    // average cost as a Scalar.
+		    var cost = session.train(costTensor, feedEntries, batchSize, optimizer, deeplearn.CostReduction.MEAN);
+
+		    // Compute the cost (by calling get), which requires transferring data
+	    	// from the GPU.
+	    	console.log('last average cost (' + i + '): ' + cost.get());
+		  });
+	}
+
+}
+
+function Train(features,points)
+{
+	hohey.train(features,points);
+	console.log(hohey.predict(features[0]));
+	console.log(points[0]);
+
+
+	// var vector = new Matrix(x);
+	// var pred = W.multiply(vector.T);
+	// console.log(pred);
+	// console.log(points[0])
+
+	// console.log(W.shape)
+	// // numpy.linalg.inv(C).dot(X.T.dot(y))
+	// console.log(t1.shape);
+	// console.log(t2.shape)
+
+}
+
+
+
+
+
+</script>
+</head>
+<body></body>
+</html>
